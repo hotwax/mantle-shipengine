@@ -6,7 +6,8 @@
 
     <mantle.shipment.carrier.ShippingGatewayConfig shippingGatewayConfigId="SHIPENGINE_DEMO"
                                                    shippingGatewayTypeEnumId="ShGtwyShipEngine" description="ShipEngine API Demo"
-                                                   getRateServiceName="mantle.ShipEngine.ShipEngineServices.get#ShippingRate">
+                                                   getRateServiceName="mantle.ShipEngine.ShipEngineServices.get#ShippingRate"
+                                                   requestLabelsServiceName="mantle.ShipEngineServices.post#CreateLabel">
 
         <!--  set your ShipEngine Account IDs for carriers with records like these  -->
         <carriers carrierPartyId="UPS" gatewayAccountId="se-2084091"/>
