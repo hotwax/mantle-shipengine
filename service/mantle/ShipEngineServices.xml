@@ -76,6 +76,10 @@
             <entity-find-one entity-name="moqui.basic.Geo" value-field="stateFrom">
                 <field-map field-name="geoId" from="originPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
+            <entity-find-one entity-name="moqui.basic.Geo" value-field="countryFrom">
+            <entity-find-one entity-name="moqui.basic.Geo" value-field="countryFrom">
+                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/></entity-find-one>
+            <set field="fromCountry" from="countryFrom.geoCodeAlpha2"/>
 
             <if condition="!originPostalAddress.telecomContactMechId">
                 <return error="true" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/></if>
@@ -88,7 +92,7 @@
 
             <set field="shipFrom" from="[name:originPostalAddress.toName,phone:telecomFrom.areaCode+'-'+telecomFrom.contactNumber,address_line1:originPostalAddress.address1,
                            city_locality: originPostalAddress.city, state_province:stateFrom.geoCodeAlpha2,postal_code:originPostalAddress.postalCode,
-                           country_code:'US',address_residential_indicator: indicatorFrom]"/>
+                           country_code:fromCountry,address_residential_indicator: indicatorFrom]"/>
 
             <!--~~~~~~~~~~~~~ Address To ~~~~~~~~~~~~~~~~-->
 
@@ -107,7 +111,9 @@
             <entity-find-one entity-name="moqui.basic.Geo" value-field="stateTo">
                 <field-map field-name="geoId" from="destPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
-
+            <entity-find-one entity-name="moqui.basic.Geo" value-field="countryTo">
+                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/></entity-find-one>
+            <set field="toCountry" from="countryTo.geoCodeAlpha2"/>
             <if condition="!destPostalAddress.telecomContactMechId">
                 <log level="warn" message="telecomContactMechId not set for Destination ${destPostalContactMechId}"/></if>
 
@@ -118,7 +124,7 @@
             <set field="phoneTo" from="(destPostalAddress.telecomContactMechId)?telecomTo.areaCode+'-'+telecomTo.contactNumber:null"/>
             <set field="shipTo" from="[name:destPostalAddress.toName,phone:phoneTo,address_line1:destPostalAddress.address1,
                            city_locality: destPostalAddress.city,state_province:stateTo.geoCodeAlpha2,postal_code:destPostalAddress.postalCode,
-                           country_code:'US',address_residential_indicator:indicatorTo]"/>
+                           country_code:toCountry,address_residential_indicator:indicatorTo]"/>
 
             <!--~~~~~~~~~~~~~ Shipment Package ~~~~~~~~~~~~~-->
 
@@ -129,6 +135,27 @@
 
             <if condition="!packages">
                 <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/><return/></if>
+            <if condition="!packages.weightUomId">
+                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
+
+            <entity-find-one entity-name="moqui.basic.UomConversion" value-field="conversion">
+                <field-map field-name="uomId" from="packages.weightUomId"/>
+                <field-map field-name="toUomId" value="WT_oz"/>
+            </entity-find-one>
+
+            <set field="convertedWeight" from="packages.weight*conversion.conversionFactor"/>
+            <set field="weight" from="[value: convertedWeight, unit: 'ounce']"/>
+            <!--~~~~~~~~~~~~~ Shipment Package ~~~~~~~~~~~~~-->
+
+            <entity-find-one entity-name="mantle.shipment.ShipmentPackage" value-field="packages">
+                <field-map field-name="shipmentId"/>
+                <field-map field-name="shipmentPackageSeqId" />
+            </entity-find-one>
+
+            <if condition="!packages">
+                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/><return/></if>
+            <if condition="!packages.weightUomId">
+                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
 
             <entity-find-one entity-name="moqui.basic.UomConversion" value-field="conversion">
                 <field-map field-name="uomId" from="packages.weightUomId"/>
@@ -193,7 +220,7 @@
             <script>
                 <![CDATA[
                     org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
-                            .addHeader(apiTokenOpt.optionEnumId, apiTokenOpt.optionValue)
+                            .addHeader("API-Key", apiTokenOpt.optionValue)
                             .addHeader("Content-Type", "application/json").jsonObject(requestMap)
                     restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/rates").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
@@ -287,6 +314,9 @@
             <entity-find-one entity-name="moqui.basic.Geo" value-field="stateFrom">
                 <field-map field-name="geoId" from="originPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
+            <entity-find-one entity-name="moqui.basic.Geo" value-field="countryFrom">
+                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/></entity-find-one>
+            <set field="fromCountry" from="countryFrom.geoCodeAlpha2"/>
 
             <if condition="!originPostalAddress.telecomContactMechId">
                 <log level="warn" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/></if>
@@ -299,7 +329,7 @@
             <set field="phoneFrom" from="(originPostalAddress.telecomContactMechId)?telecomFrom.areaCode+'-'+telecomFrom.contactNumber:null"/>
             <set field="shipFrom" from="[name:originPostalAddress.toName,phone:phoneFrom,address_line1:originPostalAddress.address1,
                            city_locality: originPostalAddress.city, state_province:stateFrom.geoCodeAlpha2,postal_code:originPostalAddress.postalCode,
-                           country_code:'US',address_residential_indicator: indicatorFrom]"/>
+                           country_code:fromCountry,address_residential_indicator: indicatorFrom]"/>
 
             <!--~~~~~~~~~~~~~ Address To ~~~~~~~~~~~~~~~~-->
 
@@ -318,10 +348,13 @@
             <entity-find-one entity-name="moqui.basic.Geo" value-field="stateTo">
                 <field-map field-name="geoId" from="destPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
+            <entity-find-one entity-name="moqui.basic.Geo" value-field="countryTo">
+                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/></entity-find-one>
+            <set field="toCountry" from="countryTo.geoCodeAlpha2"/>
 
             <set field="shipTo" from="[name:destPostalAddress.toName,address_line1:destPostalAddress.address1,
                            city_locality: destPostalAddress.city,state_province:stateTo.geoCodeAlpha2,postal_code:destPostalAddress.postalCode,
-                           country_code:'US',address_residential_indicator:indicatorTo]"/>
+                           country_code:toCountry,address_residential_indicator:indicatorTo]"/>
 
             <!--~~~~~~~~~~~~~ Gateway Method ~~~~~~~~~~~~~-->
 
@@ -342,6 +375,8 @@
                 <field-map field-name="shipmentId"/>
                 <field-map field-name="shipmentPackageSeqId" />
             </entity-find-one>
+            <if condition="!packages">
+                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/><return/></if>
             <if condition="!packages.weightUomId">
                 <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
 
@@ -375,7 +410,7 @@
             <script>
                 <![CDATA[
                     org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
-                            .addHeader(apiTokenOpt.optionEnumId, apiTokenOpt.optionValue)
+                            .addHeader("API-Key", apiTokenOpt.optionValue)
                             .addHeader("Content-Type", "application/json").jsonObject(requestMap)
                     restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/labels").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
@@ -472,7 +507,7 @@
             <script>
                 <![CDATA[
                     org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.PUT)
-                            .addHeader(apiTokenOpt.optionEnumId, apiTokenOpt.optionValue)
+                            .addHeader("API-Key"    , apiTokenOpt.optionValue)
                     restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/labels/${labelId}/void").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
