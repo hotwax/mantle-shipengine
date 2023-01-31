@@ -14,7 +14,7 @@
         <carriers carrierPartyId="USPS" gatewayAccountId="se-2084090"/>
 
         <!--  set your ShipEngine API token (test or live) with a record like this  -->
-        <options optionEnumId="SgoApiToken" optionValue="TEST_2poOziW2ayqDLjS5Nn5dNym5+DNUAxKZ7XMGij7URb4"/>
+        <options optionEnumId="SgoApiToken" optionValue=""/>
         <options optionEnumId="SgoLabelType" optionValue="PDF_4x6"/>
 
         <!--  use SCopyhippingGatewayBoxType to override default gatewayBoxId on ShipmentBoxType  -->

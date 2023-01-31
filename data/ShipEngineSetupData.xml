@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <entity-facade-xml type="seed">
     <moqui.basic.Enumeration description="ShipEngine REST API" enumId="ShGtwyShipEngine" enumTypeId="ShippingGatewayType"/>
-    <moqui.basic.Enumeration description="ShipEngine Gateway Options" enumId="EgShipEngineOption" enumTypeId="EnumGroup"/>
     <moqui.basic.EnumGroupMember enumGroupEnumId="EgShipEngineOption" enumId="ShGtwyShipEngine" sequenceNum="1"/>
 </entity-facade-xml>
