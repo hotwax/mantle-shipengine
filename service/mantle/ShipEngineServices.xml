@@ -20,27 +20,35 @@
                 <field-map field-name="shippingGatewayConfigId"/>
                 <field-map field-name="optionEnumId" value="API-Key"/>
             </entity-find-one>
-            <set field="apiToken" from="apiTokenOpt?.optionValue"/>
-            <if condition="!apiToken">
-                <return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/><return/></if>
+            <if condition="!apiTokenOpt">
+                <return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ shipment:routeSegment ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.Shipment" value-field="shipment" for-update="true"/>
-            <if condition="!shipment"><return error="true" message="Shipment not found with ID ${shipmentId}"/></if>
+            <if condition="!shipment">
+                <return error="true" message="Shipment not found with ID ${shipmentId}"/>
+            </if>
             <entity-find-one entity-name="mantle.shipment.ShipmentRouteSegment" value-field="routeSegment"/>
-            <if condition="!routeSegment"><return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+            <if condition="!routeSegment">
+                <return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <if condition="!shipment.fromPartyId">
-                <return error="true" message="From party not set on shipment ${shipmentId}" /></if>
+                <return error="true" message="From party not set on shipment ${shipmentId}" />
+            </if>
             <if condition="!shipment.toPartyId">
-                <return error="true" message="To party not set on shipment ${shipmentId}"/></if>
+                <return error="true" message="To party not set on shipment ${shipmentId}"/>
+            </if>
 
             <if condition="!routeSegment.carrierPartyId || routeSegment.carrierPartyId == '_NA_'">
-                <return error="true" message="Carrier not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="Carrier not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <set field="shipmentMethodEnumId" from="shipmentMethodEnumId ?: routeSegment.shipmentMethodEnumId"/>
             <if condition="!shipmentMethodEnumId">
-                <return error="true" message="Shipment method not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="Shipment method not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ Address From ~~~~~~~~~~~~~~~~-->
 
@@ -53,79 +61,77 @@
             </if>
 
             <if condition="!originPostalContactMechId">
-                <return error="true" message="originPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/><return/></if>
+                <return error="true" message="originPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <entity-find-one entity-name="mantle.party.contact.PostalAddress" value-field="originPostalAddress">
                 <field-map field-name="contactMechId" from="originPostalContactMechId"/>
             </entity-find-one>
 
             <if condition="!originPostalAddress">
-                <return error="true" message="Origin Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/><return/></if>
+                <return error="true" message="Origin Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <set field="originIndicator" from="(originPostalAddress.commercial==null || originPostalAddress.commercial=='Y')?'No':'Yes'"/>
-
             <entity-find-one entity-name="moqui.basic.Geo" value-field="originStateGeo">
                 <field-map field-name="geoId" from="originPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
             <entity-find-one entity-name="moqui.basic.Geo" value-field="originCountryGeo">
-                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/></entity-find-one>
+                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/>
+            </entity-find-one>
             <set field="originCountry" from="originCountryGeo.geoCodeAlpha2"/>
-
             <if condition="!originPostalAddress.telecomContactMechId">
-                <return error="true" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/></if>
-
-
+                <return error="true" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/>
+            </if>
             <entity-find-one entity-name="mantle.party.contact.TelecomNumber" value-field="originTelecom" >
                 <field-map field-name="contactMechId" from="originPostalAddress.telecomContactMechId"/>
             </entity-find-one>
 
-
-            <set field="shipFrom" from="[name:originPostalAddress.toName,phone:originTelecom.areaCode+'-'+originTelecom.contactNumber,address_line1:originPostalAddress.address1,
-                           city_locality: originPostalAddress.city, state_province:originStateGeo.geoCodeAlpha2,postal_code:originPostalAddress.postalCode,
-                           country_code:originCountry,address_residential_indicator: originIndicator]"/>
+            <set field="shipFrom" from="[name:originPostalAddress.toName,phone:originTelecom.areaCode+'-'+originTelecom.contactNumber,
+                        address_line1:originPostalAddress.address1,city_locality: originPostalAddress.city, state_province:originStateGeo.geoCodeAlpha2,
+                        postal_code:originPostalAddress.postalCode,country_code:originCountry,address_residential_indicator: originIndicator]"/>
 
             <!--~~~~~~~~~~~~~ Address To ~~~~~~~~~~~~~~~~-->
 
             <if condition="!routeSegment.destPostalContactMechId">
-                <return error="true" message="destPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/><return/></if>
-
+                <return error="true" message="destPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <entity-find-one entity-name="mantle.party.contact.PostalAddress" value-field="destPostalAddress">
                 <field-map field-name="contactMechId" from="routeSegment.destPostalContactMechId"/>
             </entity-find-one>
-
             <if condition="!destPostalAddress">
-                <return error="true" message="Destination Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/><return/></if>
-
+                <return error="true" message="Destination Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <set field="destIndicator" from="(destPostalAddress.commercial==null || destPostalAddress.commercial=='N')?'Yes':'No'"/>
 
             <entity-find-one entity-name="moqui.basic.Geo" value-field="destStateGeo">
                 <field-map field-name="geoId" from="destPostalAddress.stateProvinceGeoId"/>
             </entity-find-one>
             <entity-find-one entity-name="moqui.basic.Geo" value-field="destCountryGeo">
-                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/></entity-find-one>
-            <set field="destCountry" from="destCountryGeo.geoCodeAlpha2"/>
+                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/>
+            </entity-find-one>
             <if condition="!destPostalAddress.telecomContactMechId">
-                <log level="warn" message="telecomContactMechId not set for Destination ${destPostalContactMechId}"/></if>
-
+                <log level="warn" message="telecomContactMechId not set for Destination ${destPostalContactMechId}"/>
+            </if>
             <entity-find-one entity-name="mantle.party.contact.TelecomNumber" value-field="destTelecom" >
                 <field-map field-name="contactMechId" from="destPostalAddress.telecomContactMechId"/>
             </entity-find-one>
-
             <set field="destPhoneNumber" from="(destPostalAddress.telecomContactMechId)?destTelecom.areaCode+'-'+destTelecom.contactNumber:null"/>
+
             <set field="shipTo" from="[name:destPostalAddress.toName,phone:destPhoneNumber,address_line1:destPostalAddress.address1,
                            city_locality: destPostalAddress.city,state_province:destStateGeo.geoCodeAlpha2,postal_code:destPostalAddress.postalCode,
-                           country_code:destCountry,address_residential_indicator:destIndicator]"/>
-
+                           country_code:destCountryGeo.geoCodeAlpha2,address_residential_indicator:destIndicator]"/>
        
             <!--~~~~~~~~~~~~~ Shipment Package ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.ShipmentPackage" value-field="shipmentPackage"/>
 
             <if condition="!shipmentPackage">
-                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/><return/></if>
+                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
             <if condition="!shipmentPackage.weightUomId">
-                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
-
+                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
             <set field="packageWeight" from="shipmentPackage.weight"/>
             <if condition="shipmentPackage.weightUomId != WT_oz">
                 <entity-find-one entity-name="moqui.basic.UomConversion" value-field="conversion">
@@ -134,9 +140,6 @@
                 </entity-find-one>
                 <set field="packageWeight" from="shipmentPackage.weight*conversion.conversionFactor"/>
             </if>
-            <set field="packageList" from="[[weight:[value: packageWeight, unit: 'ounce']]]"/>
-
-            <set field="shipment" from="[validateAddress:'noValidation',ship_to:shipTo,ship_from:shipFrom,packages:packageList]"/>
 
             <!--~~~~~~~~~~~~~ Gateway Carrier ~~~~~~~~~~~~~-->
 
@@ -145,19 +148,14 @@
                 <field-map field-name="carrierPartyId" from="routeSegment.carrierPartyId"/>
             </entity-find-one>
 
-            <set field="carrierIds" from="[gatewayCarrier.gatewayAccountId]"/>
-
             <!--~~~~~~~~~~~~~ Gateway Method ~~~~~~~~~~~~~-->
-
             <entity-find-one entity-name="mantle.shipment.carrier.ShippingGatewayMethod" value-field="gatewayMethod">
                 <field-map field-name="shippingGatewayConfigId"/>
                 <field-map field-name="carrierPartyId" from="routeSegment.carrierPartyId"/>
                 <field-map field-name="shipmentMethodEnumId"/>
             </entity-find-one>
-
-            <set field="serviceCode" from="[]"/>
-            <if condition="!gatewayMethod.gatewayServiceCode"><then>
-                <log level="warn" message="Gateway method ${shipmentMethodEnumId} not set on for ${shippingGatewayConfigId}"/></then>
+            <if condition="!gatewayMethod">
+                <log level="warn" message="Gateway method ${shipmentMethodEnumId} not set on for ${shippingGatewayConfigId}"/>
                 <else>
                     <set field="serviceCode" from="[gatewayMethod.gatewayServiceCode]"/>
                 </else>
@@ -165,33 +163,34 @@
 
             <!--~~~~~~~~~~~~~ Gateway Box type ~~~~~~~~~~~~~-->
 
-            <set field="packageCode" from="[]"/>
-            <if condition="!shipmentPackage.shipmentBoxTypeId"><then>
-                <log level="warn" message="Shipment Box Type not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/></then>
+            <if condition="!shipmentPackage.shipmentBoxTypeId">
+                <log level="warn" message="Shipment Box Type not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/>
                 <else>
                     <entity-find-one entity-name="mantle.shipment.carrier.ShippingGatewayBoxType" value-field="box">
                         <field-map field-name="shippingGatewayConfigId"/>
                         <field-map field-name="shipmentBoxTypeId" from="shipmentPackage.shipmentBoxTypeId"/>
-                        <if condition="!box.gatewayBoxId"><then>
-                            <log level="warn" message="Shipment Box Type ${shipmentMethodEnumId} not found in Database "/></then>
-                            <else><set field="packageCode" from="[box.gatewayBoxId]"/></else></if>
                     </entity-find-one>
+                    <if condition="!box.gatewayBoxId">
+                        <log level="warn" message="Shipment Box Type ${shipmentMethodEnumId} not found in Database "/>
+                        <else>
+                            <set field="packageCode" from="[box.gatewayBoxId]"/>
+                        </else>
+                    </if>
                 </else>
             </if>
 
-            <set field="rateOptions" from="[carrier_ids:carrierIds,service_codes:serviceCode,package_codes:packageCode]"/>
-            <set field="requestMap" from= "[rate_options:rateOptions,shipment:shipment]"/>     <!--request map-->
-            <set field="responseMap" from="[]"/>
-            <set field="errMsg" type="String"/>
+            <set field="requestMap" from= "[rate_options:[carrier_ids:[gatewayCarrier.gatewayAccountId],service_codes:serviceCode,package_codes:packageCode],
+                        shipment:[validateAddress:'noValidation',ship_to:shipTo,ship_from:shipFrom,packages:[[weight:[value: packageWeight, unit: 'ounce']]]]]"/>     <!--request map-->
 
             <!--~~~~~~~~~~~~~ Rest Api Call ~~~~~~~~~~~~~-->
 
             <script>
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
-                            .addHeader("API-Key", apiTokenOpt.optionValue)
+                    org.moqui.util.RestClient restClient = ec.service.rest()
+                            .method(org.moqui.util.RestClient.POST)
+                            .addHeader("API-Key", ${apiTokenOpt.optionValue})
                             .addHeader("Content-Type", "application/json").jsonObject(requestMap)
-                    restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/rates").build()
+                            .uri("https://api.shipengine.com/v1/rates").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         errMsg = restResponse.text()
@@ -210,9 +209,6 @@
 
     <service verb="request" noun="CreateLabel">
         <implements service="mantle.shipment.CarrierServices.request#ShippingLabels"/>
-        <in-parameters>
-            <parameter name="shipmentPackageSeqId" required="true"/>
-        </in-parameters>
         <out-parameters>
             <parameter name="responseMap"/>
             <parameter name="errMsg"/>
@@ -225,27 +221,35 @@
                 <field-map field-name="shippingGatewayConfigId"/>
                 <field-map field-name="optionEnumId" value="API-Key"/>
             </entity-find-one>
-            <set field="apiToken" from="apiTokenOpt?.optionValue"/>
-            <if condition="!apiToken"><return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/></if>
+            <if condition="!apiTokenOpt">
+                <return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ shipment:routeSegment ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.Shipment" value-field="shipment" for-update="true"/>
-            <if condition="!shipment"><return error="true" message="Shipment not found with ID ${shipmentId}"/></if>
+            <if condition="!shipment">
+                <return error="true" message="Shipment not found with ID ${shipmentId}"/>
+            </if>
             <entity-find-one entity-name="mantle.shipment.ShipmentRouteSegment" value-field="routeSegment"/>
-            <if condition="!routeSegment"><return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
-
+            <if condition="!routeSegment">
+                <return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <if condition="!shipment.fromPartyId">
-                <return error="true" message="From party not set on shipment ${shipmentId}"/></if>
+                <return error="true" message="From party not set on shipment ${shipmentId}"/>
+            </if>
             <if condition="!shipment.toPartyId">
-                <return error="true" message="To party not set on shipment ${shipmentId}"/></if>
+                <return error="true" message="To party not set on shipment ${shipmentId}"/>
+            </if>
 
 
             <if condition="!routeSegment.carrierPartyId || routeSegment.carrierPartyId == '_NA_'">
-                <return error="true" message="Carrier not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="Carrier not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <set field="shipmentMethodEnumId" from="shipmentMethodEnumId ?: routeSegment.shipmentMethodEnumId"/>
-            <if condition="!shipmentMethodEnumId"><set field="hasIssues" from="true"/>
-                <return error="true" message="Shipment method not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+            <if condition="!shipmentMethodEnumId">
+                <return error="true" message="Shipment method not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ Address From ~~~~~~~~~~~~~~~~-->
 
@@ -256,59 +260,63 @@
                     <set field="originPostalContactMechId" from="facOriginOut.postalContactMechId"/>
                 </if>
             </if>
-
             <if condition="!originPostalContactMechId">
-                <return error="true" message="originPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="originPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <entity-find-one entity-name="mantle.party.contact.PostalAddress" value-field="originPostalAddress">
-                <field-map field-name="contactMechId" from="originPostalContactMechId"/></entity-find-one>
+                <field-map field-name="contactMechId" from="originPostalContactMechId"/>
+            </entity-find-one>
 
             <if condition="!originPostalAddress">
-                <return error="true" message="Origin Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
-
+                <return error="true" message="Origin Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <set field="originIndicator" from="(originPostalAddress.commercial==null || originPostalAddress.commercial=='Y')?'No':'Yes'"/>
 
             <entity-find-one entity-name="moqui.basic.Geo" value-field="originStateGeo">
-                <field-map field-name="geoId" from="originPostalAddress.stateProvinceGeoId"/></entity-find-one>
+                <field-map field-name="geoId" from="originPostalAddress.stateProvinceGeoId"/>
+            </entity-find-one>
             <entity-find-one entity-name="moqui.basic.Geo" value-field="originCountryGeo">
-                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/></entity-find-one>
-            <set field="originCountry" from="originCountryGeo.geoCodeAlpha2"/>
-
+                <field-map field-name="geoId" from="originPostalAddress.countryGeoId"/>
+            </entity-find-one>
             <if condition="!originPostalAddress.telecomContactMechId">
-                <return error="true" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/></if>
-
+                <return error="true" message="telecomContactMechId not set for Origin ${originPostalContactMechId}"/>
+            </if>
 
             <entity-find-one entity-name="mantle.party.contact.TelecomNumber" value-field="originTelecom" >
-                <field-map field-name="contactMechId" from="originPostalAddress.telecomContactMechId"/></entity-find-one>
+                <field-map field-name="contactMechId" from="originPostalAddress.telecomContactMechId"/>
+            </entity-find-one>
 
             <set field="originPhoneNumber" from="(originPostalAddress.telecomContactMechId)?originTelecom.areaCode+'-'+originTelecom.contactNumber:null"/>
             <set field="shipFrom" from="[name:originPostalAddress.toName,phone:originPhoneNumber,address_line1:originPostalAddress.address1,
                            city_locality: originPostalAddress.city, state_province:originStateGeo.geoCodeAlpha2,postal_code:originPostalAddress.postalCode,
-                           country_code:originCountry,address_residential_indicator: originIndicator]"/>
+                           country_code:originCountryGeo.geoCodeAlpha2,address_residential_indicator: originIndicator]"/>
 
             <!--~~~~~~~~~~~~~ Address To ~~~~~~~~~~~~~~~~-->
 
             <if condition="!routeSegment.destPostalContactMechId">
-                <return error="true" message="destPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="destPostalContactMechId not set on shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <entity-find-one entity-name="mantle.party.contact.PostalAddress" value-field="destPostalAddress">
                 <field-map field-name="contactMechId" from="routeSegment.destPostalContactMechId"/>
             </entity-find-one>
-
             <if condition="!destPostalAddress">
-                <return error="true" message="Destination Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+                <return error="true" message="Destination Postal Address is not found for shipment ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
 
             <set field="destIndicator" from="(destPostalAddress.commercial==null || destPostalAddress.commercial=='N')?'Yes':'No'"/>
 
             <entity-find-one entity-name="moqui.basic.Geo" value-field="destStateGeo">
-                <field-map field-name="geoId" from="destPostalAddress.stateProvinceGeoId"/></entity-find-one>
+                <field-map field-name="geoId" from="destPostalAddress.stateProvinceGeoId"/>
+            </entity-find-one>
             <entity-find-one entity-name="moqui.basic.Geo" value-field="destCountryGeo">
-                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/></entity-find-one>
-            <set field="destCountry" from="destCountryGeo.geoCodeAlpha2"/>
+                <field-map field-name="geoId" from="destPostalAddress.countryGeoId"/>
+            </entity-find-one>
 
-            <set field="shipTo" from="[name:destPostalAddress.toName,address_line1:destPostalAddress.address1,
-                           city_locality: destPostalAddress.city,state_province:destStateGeo.geoCodeAlpha2,postal_code:destPostalAddress.postalCode,
-                           country_code:destCountry,address_residential_indicator:destIndicator]"/>
+            <set field="shipTo" from="[name:destPostalAddress.toName,address_line1:destPostalAddress.address1,city_locality: destPostalAddress.city,
+                        state_province:destStateGeo.geoCodeAlpha2,postal_code:destPostalAddress.postalCode,country_code:destCountryGeo.geoCodeAlpha2,
+                        address_residential_indicator:destIndicator]"/>
 
             <!--~~~~~~~~~~~~~ Gateway Method ~~~~~~~~~~~~~-->
 
@@ -319,49 +327,48 @@
             </entity-find-one>
 
             <if condition="!gatewayMethod">
-                <return error="true" message="gatewayMethod not set for Shipping Gateway ${shippingGatewayConfigId}"/></if>
+                <return error="true" message="gatewayMethod not set for Shipping Gateway ${shippingGatewayConfigId}"/>
+            </if>
             <set field="serviceCode" from="gatewayMethod.gatewayServiceCode"/>
 
             <!--~~~~~~~~~~~~~ Shipment Package ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.ShipmentPackage" value-field="shipmentPackage"/>
             <if condition="!shipmentPackage">
-                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/><return/></if>
+                <return error="true" message="Any package not set on shipment ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
             <if condition="!shipmentPackage.weightUomId">
-                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
+                <return error="true" message="Weight or WeightUomId not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
 
             <entity-find-one entity-name="moqui.basic.UomConversion" value-field="conversion">
                 <field-map field-name="uomId" from="shipmentPackage.weightUomId"/>
                 <field-map field-name="toUomId" value="WT_oz"/>
             </entity-find-one>
-
             <set field="convertedWeight" from="shipmentPackage.weight*conversion.conversionFactor"/>
-            <set field="weight" from="[value: convertedWeight, unit: 'ounce']"/>
 
             <!--~~~~~~~~~~~~~ Gateway Box type ~~~~~~~~~~~~~-->
 
-            <set field="dimensions" from="[:]"/>
             <if condition="shipmentPackage.shipmentBoxTypeId">
                 <entity-find-one entity-name="mantle.shipment.ShipmentBoxType" value-field="box">
-                    <field-map field-name="shipmentBoxTypeId" from="shipmentPackage.shipmentBoxTypeId"/></entity-find-one>
-                <set field="dimensions" from="[height:box.boxHeight,width:box.boxWidth,length:box.boxLength,unit:'inch']"/></if>
+                    <field-map field-name="shipmentBoxTypeId" from="shipmentPackage.shipmentBoxTypeId"/>
+                </entity-find-one>
+                <set field="dimensions" from="[height:box.boxHeight,width:box.boxWidth,length:box.boxLength,unit:'inch']"/>
+            </if>
 
-            <set field="packageList" from="[[weight:weight,dimensions:dimensions]]"/>
+            <set field="requestMap" from= "[shipment:[service_code:serviceCode,ship_to:shipTo,ship_from:shipFrom,
+            packages:[[weight:[value: convertedWeight, unit: 'ounce'],dimensions:dimensions]]]]"/> <!--request map-->
 
-            <set field="shipment" from="[service_code:serviceCode,ship_to:shipTo,ship_from:shipFrom,packages:packageList]"/>
-
-            <set field="requestMap" from= "[shipment:shipment]"/> <!--request map-->
-            <set field="responseMap"/>
-            <set field="errMsg" type="String"/>
 
             <!--~~~~~~~~~~~~~ Rest Api Call ~~~~~~~~~~~~~-->
 
             <script>
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
-                            .addHeader("API-Key", apiTokenOpt.optionValue)
+                    org.moqui.util.RestClient restClient = ec.service.rest()
+                            .method(org.moqui.util.RestClient.POST)
+                            .addHeader("API-Key", ${apiTokenOpt.optionValue})
                             .addHeader("Content-Type", "application/json").jsonObject(requestMap)
-                    restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/labels").build()
+                            .uri("https://api.shipengine.com/v1/labels").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         errMsg = restResponse.text()
@@ -376,23 +383,23 @@
             <!--~~~~~~~~~~~~~ Shipment Package Route Segment ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.ShipmentPackageRouteSeg" value-field="packageRouteSeg"/>
-
             <if condition="!packageRouteSeg">
-                <return error="true" message="ShipmentPackageRouteSeg not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId} to store the response !!!"/></if>
+                <return error="true" message="ShipmentPackageRouteSeg not set for Shipment Package ${shipmentId}:${shipmentPackageSeqId} to store the response !!!"/>
+            </if>
 
-                <set field="packageRouteSeg.gatewayStatus" from="responseMap.status"/>
-                <set field="packageRouteSeg.gatewayLabelId" from="responseMap.label_id"/>
-                <set field="packageRouteSeg.gatewayRateId" from="responseMap.rate?.label_id"/>
-                <set field="packageRouteSeg.estimatedAmount" from="responseMap.shipment_cost?.amount as BigDecimal"/>
-                <set field="packageRouteSeg.baseAmount" from="packageRouteSeg.estimatedAmount"/>
-                <set field="packageRouteSeg.trackingStatusEnumId" value="ShTsUnknown"/>
-                <set field="packageRouteSeg.trackingSubStatus" from="responseMap.tracking_status"/>
-                <set field="packageRouteSeg.trackingCode" from="responseMap.tracking_number"/>
-                <set field="packageRouteSeg.trackingUrl" from="responseMap.tracking_url_provider"/>
-                <set field="packageRouteSeg.labelDate" from="ec.l10n.parseTimestamp(responseMap.created_at, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZ')"/>
-                <set field="packageRouteSeg.labelUrl" from="responseMap.label_download?.pdf"/>
-                <set field="packageRouteSeg.insuranceAmount" from="responseMap.insurance_cost?.amount as BigDecimal"/>
-                <set field="packageRouteSeg.actualAmount" from="packageRouteSeg.insuranceAmount+packageRouteSeg.baseAmount"/>
+            <set field="packageRouteSeg.gatewayStatus" from="responseMap.status"/>
+            <set field="packageRouteSeg.gatewayLabelId" from="responseMap.label_id"/>
+            <set field="packageRouteSeg.gatewayRateId" from="responseMap.rate?.label_id"/>
+            <set field="packageRouteSeg.estimatedAmount" from="responseMap.shipment_cost?.amount as BigDecimal"/>
+            <set field="packageRouteSeg.baseAmount" from="packageRouteSeg.estimatedAmount"/>
+            <set field="packageRouteSeg.trackingStatusEnumId" value="ShTsUnknown"/>
+            <set field="packageRouteSeg.trackingSubStatus" from="responseMap.tracking_status"/>
+            <set field="packageRouteSeg.trackingCode" from="responseMap.tracking_number"/>
+            <set field="packageRouteSeg.trackingUrl" from="responseMap.tracking_url_provider"/>
+            <set field="packageRouteSeg.labelDate" from="ec.l10n.parseTimestamp(responseMap.created_at, 'yyyy-MM-dd\'T\'HH:mm:ss.SSSZ')"/>
+            <set field="packageRouteSeg.labelUrl" from="responseMap.label_download?.pdf"/>
+            <set field="packageRouteSeg.insuranceAmount" from="responseMap.insurance_cost?.amount as BigDecimal"/>
+            <set field="packageRouteSeg.actualAmount" from="packageRouteSeg.insuranceAmount+packageRouteSeg.baseAmount"/>
 
             <!--~~~~~~~~~~~~~ ShipmentPackageRouteSeg Entity Update ~~~~~~~~~~~~~-->
             <entity-update value-field="packageRouteSeg"/>
@@ -418,38 +425,44 @@
 
             <!--~~~~~~~~~~~~~ Authorization ~~~~~~~~~~~~~-->
 
-            <entity-find-one entity-name="mantle.shipment.carrier.ShippingGatewayOption" value-field="apiTokenOpt">
+            <entity-find-one entity-name="mantle.shipment.carrier.ShippingGatewayOption" value-field="">
                 <field-map field-name="shippingGatewayConfigId"/>
                 <field-map field-name="optionEnumId" value="API-Key"/>
             </entity-find-one>
-            <set field="apiToken" from="apiTokenOpt?.optionValue"/>
-            <if condition="!apiToken"><return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/><return/></if>
+            <if condition="!apiTokenOpt">
+                <return error="true" message="Shipping gateway ${shippingGatewayConfigId} has no API-Key, not requesting Shipping rates"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ shipment:routeSegment ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.Shipment" value-field="shipment" for-update="true"/>
-            <if condition="!shipment"><return error="true" message="Shipment not found with ID ${shipmentId}"/></if>
+            <if condition="!shipment">
+                <return error="true" message="Shipment not found with ID ${shipmentId}"/>
+            </if>
             <entity-find-one entity-name="mantle.shipment.ShipmentRouteSegment" value-field="routeSegment"/>
-            <if condition="!routeSegment"><return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/></if>
+            <if condition="!routeSegment">
+                <return error="true" message="Shipment Route Segment not found with ID ${shipmentId}:${shipmentRouteSegmentSeqId}"/>
+            </if>
             <entity-find-one entity-name="mantle.shipment.ShipmentPackage" value-field="shipmentPackage"/>
-            <if condition="!shipmentPackage"><log level="warn" message="Shipment Package not found with ID ${shipmentId}:${shipmentPackageSeqId}"/></if>
+            <if condition="!shipmentPackage">
+                <log level="warn" message="Shipment Package not found with ID ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ Shipment Package Route Segment ~~~~~~~~~~~~~-->
 
             <entity-find-one entity-name="mantle.shipment.ShipmentPackageRouteSeg" value-field="packageRouteSeg"/>
-
             <if condition="!packageRouteSeg.gatewayLabelId">
-                <return error="true" message="Label Id not found with Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/></if>
-
-            <set field="labelId" from="packageRouteSeg.gatewayLabelId"/>
+                <return error="true" message="Label Id not found with Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/>
+            </if>
 
             <!--~~~~~~~~~~~~~ Rest Api Call ~~~~~~~~~~~~~-->
 
             <script>
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.PUT)
-                            .addHeader("API-Key", apiTokenOpt.optionValue)
-                    restClient.uri().protocol("https").host("api.shipengine.com").port(443).path("v1/labels/${labelId}/void").build()
+                    org.moqui.util.RestClient restClient = ec.service.rest()
+                            .method(org.moqui.util.RestClient.PUT)
+                            .addHeader("API-Key", ${apiTokenOpt.optionValue})
+                            .uri("https://api.shipengine.com/v1/labels/${packageRouteSeg.gatewayLabelId}/void").build()
                     org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         errMsg = restResponse.text()

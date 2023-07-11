@@ -4,13 +4,13 @@
                                                    shippingGatewayTypeEnumId="ShGtwyShipEngine" description="ShipEngine API Demo"
                                                    getRateServiceName="mantle.ShipEngineServices.request#ShippingRates"
                                                    requestLabelServiceName="mantle.ShipEngineServices.request#CreateLabel">
-        <carriers carrierPartyId="UPS" gatewayAccountId="se-2084091"/>
-        <carriers carrierPartyId="USPS" gatewayAccountId="se-2084090"/>
+        <carriers carrierPartyId="UPS" gatewayAccountId=""/>
+        <carriers carrierPartyId="USPS" gatewayAccountId=""/>
 
         <options optionEnumId="SgoApiToken" optionValue=""/>
         <options optionEnumId="SgoLabelType" optionValue="PDF_4x6"/>
 
-        <methods carrierPartyId="USPS" shipmentMethodEnumId="ShMthGround" gatewayServiceCode="usps_first_class_mail"/>
+        <methods carrierPartyId="USPS" shipmentMethodEnumId="ShMthGround" gatewayServiceCode="usps_parcel_select"/>
         <methods carrierPartyId="UPS" shipmentMethodEnumId="ShMthGround" gatewayServiceCode="ups_ground"/>
         <methods carrierPartyId="UPS" shipmentMethodEnumId="ShMthNextDay" gatewayServiceCode="ups_next_day_air"/>
         <boxTypes shipmentBoxTypeId="USPS_FlatRateEnvelope" gatewayBoxId="FlatRateEnvelope"/>
