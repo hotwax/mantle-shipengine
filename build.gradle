@@ -36,7 +36,7 @@ dependencies {
     implementation project(':framework')
     //mySql Database jar MySql 8
     // uncomment when in use
-    //runtimeOnly 'mysql:mysql-connector-java:8.0.30'
+//    runtimeOnly 'mysql:mysql-connector-java:8.0.30'
 }
 
 // by default the Java plugin runs test on build, change to not do that (only run test if explicit task)

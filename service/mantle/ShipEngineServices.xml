@@ -47,11 +47,11 @@
                 <log level="error" message="Shipping gateway config ${shippingGatewayConfigId} has no ShippingGatewayMethod, not getting rates"/>
                 <return/>
             </if>
+            <set field="serviceCode" from="[gatewayMethod.gatewayServiceCode]"/>
             <if condition="!serviceCode">
                 <log level="error" message="Shipping gateway config ${shippingGatewayConfigId} has no gatewayServiceCode, not getting rates"/>
                 <return/>
             </if>
-            <set field="serviceCode" from="[gatewayMethod.gatewayServiceCode]"/>
 
 
             <!-- ==============  Carrier_Id  ============== -->
@@ -122,6 +122,7 @@
                 <log level="error" message="This contactMechId ${contactMechId} has no origin address, not getting rates"/>
                 <return/>
             </if>
+
             <script>
                 indicatorFrom = (originAddress.commercial==null || originAddress.commercial=='N') ? 'Yes' : 'No'
             </script>
@@ -160,6 +161,10 @@
                 <log level="error" message="This shipmentId ${shipmentId} has no Shipment package, not getting rates"/>
                 <return/>
             </if>
+            <if condition="!shipmentPackage.weight">
+                <log level="error" message="This shipmentId ${shipmentId} has no package weight, not getting rates"/>
+                <return/>
+            </if>
             <entity-find-one entity-name="moqui.basic.UomConversion" value-field="conversion">
                 <field-map field-name="uomId" from="shipmentPackage.weightUomId"/>
                 <field-map field-name="toUomId" value="WT_oz"/>
@@ -174,14 +179,16 @@
                         shipment:[validateAddress:'noValidation',ship_to:shipTo,ship_from:shipFrom,packages:[[weight:[value: convertedWeight, unit: 'ounce']]]]]"/>
 
             <script>
+                import org.moqui.util.RestClient
+                import org.moqui.util.RestClient.RestResponse
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
+                    RestClient restClient = ec.service.rest().method(RestClient.POST)
                     .addHeader("API-Key", "${apiToken}")
                     .addHeader("Content-Type", "application/json")
                     .jsonObject(requestMap)
                     restClient.uri().protocol("https")
                     .host("api.shipengine.com").port(443).path("v1/rates").build()
-                    org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
+                    RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         ec.logger.warn("Unsuccessful with status code: ${statusCode} and response: ${response}")
                         return
@@ -237,11 +244,11 @@
                 <log level="error" message="Shipping gateway ${shippingGatewayConfigId} has no ShippingGatewayMethod, not getting rates"/>
                 <return/>
             </if>
+            <set field="serviceCode" from="gatewayMethod.gatewayServiceCode"/>
             <if condition="!serviceCode">
                 <log level="error" message="Shipping gateway ${shippingGatewayConfigId} has no gatewayServiceCode, not getting rates"/>
                 <return/>
             </if>
-            <set field="serviceCode" from="gatewayMethod.gatewayServiceCode"/>
 
             <!-- ==============  Address_to  ============== -->
 
@@ -294,14 +301,14 @@
                 <field-map field-name="contactMechId" from="routeSegment.originPostalContactMechId"/>
             </entity-find-one>
             <if condition="!originAddress">
-                <log level="error" message="This contactMechId ===${contactMechId}=== has no origin address, not getting rates"/>
+                <log level="error" message="This contactMechId ${contactMechId} has no origin address, not getting rates"/>
                 <return/>
             </if>
             <script>
                 indicatorFrom = (originAddress.commercial==null || originAddress.commercial=='N') ? 'Yes' : 'No'
             </script>
             <if condition="!originAddress.stateProvinceGeoId">
-                <log level="error" message="This contactMechId ===${contactMechId}=== has no stateProvinceGeoId, not getting rates"/>
+                <log level="error" message="This contactMechId ${contactMechId} has no stateProvinceGeoId, not getting rates"/>
                 <return/>
             </if>
             <entity-find-one entity-name="moqui.basic.Geo" value-field="originState">
@@ -329,7 +336,7 @@
                 <log level="error" message="This shipmentId ${shipmentId} has no Shipment package, not getting rates"/>
                 <return/>
             </if>
-            <if condition="!shipmentPackage.weightUomId">
+            <if condition="!shipmentPackage.weight">
                 <log level="error" message="This shipmentId ${shipmentId} has no Weight UOM Id in Shipment Package, not getting rates"/>
                 <return/>
             </if>
@@ -347,14 +354,16 @@
                         dimensions:[height:box.boxHeight,width:box.boxWidth,length:box.boxLength,unit:'inch']]]]]"/>
 
             <script>
+                import org.moqui.util.RestClient
+                import org.moqui.util.RestClient.RestResponse
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.POST)
+                    RestClient restClient = ec.service.rest().method(RestClient.POST)
                     .addHeader("API-Key", "${apiToken}")
                     .addHeader("Content-Type", "application/json")
                     .jsonObject(requestMap)
                     restClient.uri().protocol("https")
                     .host("api.shipengine.com").port(443).path("v1/labels").build()
-                    org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
+                    RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         ec.logger.warn("Unsuccessful with status code: ${statusCode} and response: ${response}")
                         return
@@ -394,12 +403,7 @@
     <!-- ============================================= -->
 
     <service verb="put" noun="VoidLabel">
-        <in-parameters>
-            <parameter name="shipmentId" required="true"/>
-            <parameter name="shipmentRouteSegmentSeqId" required="true"/>
-            <parameter name="shipmentPackageSeqId"/>
-            <parameter name="shippingGatewayConfigId" required="true"/>
-        </in-parameters>
+        <implements service="mantle.shipment.CarrierServices.refund#ShippingLabels"/>
         <out-parameters>
             <parameter name="responseMap"/>
         </out-parameters>
@@ -446,15 +450,16 @@
                 <return error="true" message="Label Id not found with Shipment Package ${shipmentId}:${shipmentPackageSeqId}"/>
             </if>
             <set field="labelId" from="packageRouteSeg.gatewayLabelId"/>
-
             <script>
+                import org.moqui.util.RestClient
+                import org.moqui.util.RestClient.RestResponse
                 <![CDATA[
-                    org.moqui.util.RestClient restClient = ec.service.rest().method(org.moqui.util.RestClient.PUT)
+                    RestClient restClient = ec.service.rest().method(RestClient.PUT)
                     .addHeader("API-Key", "${apiToken}")
                     restClient.uri().protocol("https")
                     .host("api.shipengine.com")
                     .port(443).path("v1/labels/${labelId}/void").build()
-                    org.moqui.util.RestClient.RestResponse restResponse = restClient.call()
+                    RestClient.RestResponse restResponse = restClient.call()
                     if (restResponse.statusCode < 200 || restResponse.statusCode >= 300) {
                         ec.logger.warn("Unsuccessful with status code: ${statusCode} and response: ${response}")
                         return
@@ -465,4 +470,7 @@
         </actions>
     </service>
 </services>
+
+
+
 
