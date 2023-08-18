@@ -10,8 +10,8 @@ Load the demo configuration data in data/ShipEngineDemoData.xml or create your o
 ~ get#ShippingRates service: 
 This API returns a rate as per the destination location and parcel attributes.
 
-~ create#CreateLabel service :
+~ create#SippingLabel service :
 This label API will return a URL to a label for an order.
 
-~ put#VoidLabel service: 
+~ put#ShippingLabel service: 
 You will need a 'label_id' from another Label Request to void a label. If the Label is too old to be voided this request will be denied. If the Label has been scanned in, at the originating facility then it will also be denied.
