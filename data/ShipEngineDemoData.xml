@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<entity-facade-xml type="demo">
+    <mantle.shipment.ShipmentBoxType shipmentBoxTypeId="USPS_SmFlat" description="USPS Small Flat Rate Box" dimensionUomId="LEN_in" boxLength="8.69" boxWidth="5.44" boxHeight="1.75" gatewayBoxId="USPS_SmallFlatRateBox"/>
+    <mantle.shipment.ShipmentBoxType shipmentBoxTypeId="USPS_MdFlat1" description="USPS Medium Flat Rate Box 1" dimensionUomId="LEN_in" boxLength="11.25" boxWidth="8.75" boxHeight="6" gatewayBoxId="USPS_MediumFlatRateBox1"/>
+    <mantle.shipment.ShipmentBoxType shipmentBoxTypeId="USPS_LgFlat" description="USPS Large Flat Rate Box" dimensionUomId="LEN_in" boxLength="12.25" boxWidth="12.25" boxHeight="6" gatewayBoxId="USPS_LargeFlatRateBox"/>
+
+    <mantle.shipment.carrier.ShippingGatewayConfig shippingGatewayConfigId="SHIPENGINE_DEMO"
+                                                   shippingGatewayTypeEnumId="ShGtwyShipEngine" description="ShipEngine API Demo"
+                                                   getRateServiceName="mantle.ShipEngine.ShipEngineServices.get#ShippingRate"
+                                                   requestLabelsServiceName="mantle.ShipEngineServices.post#CreateLabel">
+
+        <!--  set your ShipEngine Account IDs for carriers with records like these  -->
+        <carriers carrierPartyId="UPS" gatewayAccountId=""/>
+        <carriers carrierPartyId="USPS" gatewayAccountId=""/>
+
+        <!--  set your ShipEngine API token (test or live) with a record like this  -->
+        <options optionEnumId="SgoApiToken" optionValue=""/>
+        <options optionEnumId="SgoLabelType" optionValue="PDF_4x6"/>
+
+        <!--  use ShippingGatewayMethod to override default gatewayServiceCode on CarrierShipmentMethod  -->
+        <methods carrierPartyId="USPS" shipmentMethodEnumId="ShMthGround" gatewayServiceCode="usps_parcel_select"/>\
+        <methods carrierPartyId="UPS" shipmentMethodEnumId="ShMthGround" gatewayServiceCode="ups_ground"/>
+    </mantle.shipment.carrier.ShippingGatewayConfig>
+
+    <!--  used in mantle.shipment.CarrierServices ShipmentLabels services  -->
+    <moqui.security.UserGroupPreference userGroupId="ALL_USERS" preferenceKey="DefaultShipmentGatewayConfigId" preferenceValue="SHIPENGINE_DEMO"/>
+
+    <!--  example per org/vendor settings, used as defaults if not store; note that for screens like EditParty with no store or
+            vendor the Owner Party must be set to use these settings  -->
+    <mantle.party.PartySetting partyId="ORG_ZIZI_RETAIL" partySettingTypeId="DefaultShipmentGatewayConfigId" settingValue="SHIPENGINE_DEMO"/>
+
+    <mantle.product.store.ProductStore productStoreId="POPC_DEFAULT">
+        <shipOptions carrierPartyId="USPS" shipmentMethodEnumId="ShMthGround" />
+        <shipOptions carrierPartyId="UPS" shipmentMethodEnumId="ShMthGround" />
+    </mantle.product.store.ProductStore>
+
+</entity-facade-xml>
