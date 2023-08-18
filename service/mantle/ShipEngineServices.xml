@@ -71,9 +71,8 @@
             <if condition="!destAddress">
                 <return error="true" message="This contactMechId ${contactMechId} has no destination address, not getting rates"/>
             </if>
-            <script>
-                indicatorTo = (destAddress.commercial==null || destAddress.commercial=='N') ? 'No' : 'Yes'
-            </script>
+            <set field="indicatorTo" from="(destAddress.commercial==null || destAddress.commercial=='N') ? 'No' : 'Yes'"/>
+
             <if condition="!destAddress.stateProvinceGeoId">
                 <return error="true" message="This contactMechId ${contactMechId} has no stateProvinceGeoId, not getting rates"/>
             </if>
@@ -114,9 +113,8 @@
             <if condition="!originAddress">
                 <return error="true" message="This contactMechId ${contactMechId} has no origin address, not getting rates"/>
             </if>
-            <script>
-                indicatorFrom = (originAddress.commercial==null || originAddress.commercial=='N') ? 'Yes' : 'No'
-            </script>
+            <set field="indicatorFrom" from="(originAddress.commercial==null || originAddress.commercial=='N') ? 'Yes' : 'No'"/>
+
             <if condition="!originAddress.stateProvinceGeoId">
                 <return error="true" message="This contactMechId ${contactMechId} has no stateProvinceGeoId, not getting rates"/>
             </if>
