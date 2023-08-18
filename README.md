@@ -13,5 +13,5 @@ This API returns rate as per the destination location and parcel attributes for 
 ~ create#SippingLabel service :
 This label API will return a URL to a label for a shipment id and stores it in ShipmentPackageRouteSengment.
 
-~ put#ShippingLabel service: 
+~ void#ShippingLabel service: 
 You will need a 'label_id' from another label request to void a label. If the label is too old to be voided this request will be denied. If the label has been scanned in, at the originating facility then it will also be denied.
